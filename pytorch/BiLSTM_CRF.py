@@ -6,6 +6,8 @@ import torch.optim as optim
 torch.manual_seed(1)
 START_TAG = "<START>"
 STOP_TAG = "<STOP>"
+
+
 def argmax(vec):
     # return the argmax as a python int
     _, idx = torch.max(vec, 1)
@@ -22,7 +24,8 @@ def log_sum_exp(vec):
     max_score = vec[0, argmax(vec)]
     max_score_broadcast = max_score.view(1, -1).expand(1, vec.size()[1])
     return max_score + \
-        torch.log(torch.sum(torch.exp(vec - max_score_broadcast)))
+           torch.log(torch.sum(torch.exp(vec - max_score_broadcast)))
+
 
 class BiLSTM_CRF(nn.Module):
 
@@ -102,7 +105,7 @@ class BiLSTM_CRF(nn.Module):
         tags = torch.cat([torch.tensor([self.tag_to_ix[START_TAG]], dtype=torch.long), tags])
         for i, feat in enumerate(feats):
             score = score + \
-                self.transitions[tags[i + 1], tags[i]] + feat[tags[i + 1]]
+                    self.transitions[tags[i + 1], tags[i]] + feat[tags[i + 1]]
         score = score + self.transitions[self.tag_to_ix[STOP_TAG], tags[-1]]
         return score
 
