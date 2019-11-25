@@ -61,6 +61,7 @@ class BiLSTM_CRF(nn.Module):
                 torch.randn(2, 1, self.hidden_dim // 2))
 
     def _forward_alg(self, feats):
+        # 前向算法，计算出概率最大的路径
         # Do the forward algorithm to compute the partition function
         init_alphas = torch.full((1, self.tagset_size), -10000.)
         # START_TAG has all of the score.
@@ -82,6 +83,10 @@ class BiLSTM_CRF(nn.Module):
                 trans_score = self.transitions[next_tag].view(1, -1)
                 # The ith entry of next_tag_var is the value for the
                 # edge (i -> next_tag) before we do log-sum-exp
+                # 动态规划，递归求分数，当前分数 = 前一步分数 + 前一步状态 -> 当前状态 的分数 + 当前词映射到当前状态的分数
+                # forward_var: i 时刻之前的分数(所有可能标注的情况)
+                # trans_score: 各种状态转移到当前tag_i的分数(转换到当前tag_i的特征值)
+                # emit_score:  当前词w_i映射到tag_i的分数(lstm提取的对应标签的特征值)
                 next_tag_var = forward_var + trans_score + emit_score
                 # The forward variable for this tag is log-sum-exp of all the
                 # scores.
@@ -100,6 +105,7 @@ class BiLSTM_CRF(nn.Module):
         return lstm_feats
 
     def _score_sentence(self, feats, tags):
+        # 根据给出的tag，计算分数
         # Gives the score of a provided tag sequence
         score = torch.zeros(1)
         tags = torch.cat([torch.tensor([self.tag_to_ix[START_TAG]], dtype=torch.long), tags])
@@ -157,6 +163,7 @@ class BiLSTM_CRF(nn.Module):
         feats = self._get_lstm_features(sentence)
         forward_score = self._forward_alg(feats)
         gold_score = self._score_sentence(feats, tags)
+        # 返回 实际分数 和 预测分数 的差值
         return forward_score - gold_score
 
     def forward(self, sentence):  # dont confuse this with _forward_alg above.
